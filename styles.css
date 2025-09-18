@@ -1,0 +1,196 @@
+/* Global */
+body {
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background: #f5f7fa;
+  color: #2c3e50;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar h2 {
+  margin: 0 0 25px;
+  font-weight: 600;
+}
+
+.sidebar nav a {
+  display: block;
+  padding: 12px 15px;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Content */
+.content {
+  flex: 1;
+  padding: 30px;
+}
+
+header h1 {
+  margin: 0 0 25px;
+  font-weight: 600;
+}
+
+/* Summary Cards */
+.summary {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.card {
+  flex: 1;
+  padding: 25px;
+  border-radius: 16px;
+  color: white;
+  font-size: 1.3em;
+  font-weight: 600;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.income { background: linear-gradient(135deg, #00c853, #64dd17); }
+.expense { background: linear-gradient(135deg, #ff1744, #ff6d00); }
+.balance { background: linear-gradient(135deg, #2196f3, #3f51b5); }
+
+/* Form */
+.form-section {
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.form input, .form select, .form button {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 1em;
+}
+
+.form button {
+  background: #667eea;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.form button:hover {
+  background: #5563c1;
+}
+
+/* Chart */
+.chart-section {
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.chart-section canvas {
+  width: 200px !important;
+  height: 200px !important;
+  margin: auto;
+  display: block;
+}
+
+/* Transactions Table */
+.transactions-section {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.transactions-section input {
+  margin-bottom: 12px;
+  padding: 10px;
+  width: 300px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 14px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+th {
+  background: #f5f7fa;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background: #fafafa;
+}
+
+tr:hover {
+  background: #f1f1f1;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .summary {
+    flex-direction: column;
+  }
+  .sidebar {
+    display: none;
+  }
+}
