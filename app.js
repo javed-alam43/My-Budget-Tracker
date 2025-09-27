@@ -1,71 +1,75 @@
-const API_URL = "/api/transactions";
+const API_URL = "http://localhost:3000/api/transactions";
 
 let categoryChart, monthlyChart, reportCategoryChart;
 
-// Load transactions from backend
+// Load transactions
 async function loadTransactions() {
-  const res = await fetch(API_URL);
-  const data = await res.json();
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error("Failed to fetch transactions");
+    const data = await res.json();
 
-  const table = document.getElementById("transactionsTable");
-  const totalIncome = document.getElementById("totalIncome");
-  const totalExpense = document.getElementById("totalExpense");
-  const balance = document.getElementById("balance");
+    const table = document.getElementById("transactionsTable");
+    const totalIncome = document.getElementById("totalIncome");
+    const totalExpense = document.getElementById("totalExpense");
+    const balance = document.getElementById("balance");
 
-  table.innerHTML = "";
-  let income = 0, expense = 0;
-  const categoryTotals = {};
+    table.innerHTML = "";
+    let income = 0, expense = 0;
+    const categoryTotals = {};
 
-  data.forEach(tx => {
-    // table row
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${tx.date}</td>
-      <td>${tx.category}</td>
-      <td>${tx.type}</td>
-      <td class="${tx.type}">
-        ${tx.type === "expense" ? "-" : "+"}${parseFloat(tx.amount).toFixed(2)}
-      </td>
-      <td>${tx.note || ""}</td>
-      <td><button class="delete-btn" data-id="${tx.id}">🗑</button></td>
-    `;
-    table.appendChild(row);
+    data.forEach(tx => {
+      const id = tx.id || tx._id; // ✅ support both SQL & MongoDB
+      const amount = parseFloat(tx.amount);
 
-    // totals
-    if (tx.type === "income") income += tx.amount;
-    else expense += tx.amount;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${tx.date}</td>
+        <td>${tx.category}</td>
+        <td>${tx.type}</td>
+        <td class="${tx.type}">${tx.type === "expense" ? "-" : "+"}${amount.toFixed(2)}</td>
+        <td>${tx.note || ""}</td>
+        <td><button class="delete-btn" data-id="${id}">🗑</button></td>
+      `;
+      table.appendChild(row);
 
-    // category sums
-    if (tx.type === "expense") {
-      categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + tx.amount;
-    }
-  });
+      if (tx.type === "income") income += amount;
+      else expense += amount;
 
-  totalIncome.textContent = income.toFixed(2);
-  totalExpense.textContent = expense.toFixed(2);
-  balance.textContent = (income - expense).toFixed(2);
-
-  // delete event
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
-      const id = e.target.dataset.id;
-      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      loadTransactions();
+      if (tx.type === "expense") {
+        categoryTotals[tx.category] = (categoryTotals[tx.category] || 0) + amount;
+      }
     });
-  });
 
-  // update dashboard chart
-  renderDashboardChart(categoryTotals);
+    totalIncome.textContent = income.toFixed(2);
+    totalExpense.textContent = expense.toFixed(2);
+    balance.textContent = (income - expense).toFixed(2);
 
-  // update reports if visible
-  if (document.getElementById("reports").style.display !== "none") {
-    updateReports(data);
+    // Delete transaction
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.dataset.id;
+        await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        loadTransactions();
+      });
+    });
+
+    renderDashboardChart(categoryTotals);
+
+    // Update reports if section is visible
+    if (document.getElementById("reports").style.display !== "none") {
+      updateReports(data);
+    }
+
+  } catch (err) {
+    console.error("Failed to load transactions:", err);
   }
 }
 
 // Add transaction
 document.getElementById("transactionForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const tx = {
     amount: parseFloat(document.getElementById("amount").value),
     category: document.getElementById("category").value,
@@ -73,13 +77,19 @@ document.getElementById("transactionForm").addEventListener("submit", async (e) 
     date: document.getElementById("date").value,
     note: document.getElementById("note").value
   };
-  await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tx)
-  });
-  e.target.reset();
-  loadTransactions();
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tx)
+    });
+    if (!res.ok) throw new Error("Failed to add transaction");
+    e.target.reset();
+    loadTransactions();
+  } catch (err) {
+    console.error("Failed to add transaction:", err);
+  }
 });
 
 // Search filter
@@ -90,37 +100,44 @@ document.getElementById("searchBox").addEventListener("input", () => {
   });
 });
 
-// Dashboard category chart
+// Charts
 function renderDashboardChart(categoryTotals) {
   const ctx = document.getElementById("categoryChart").getContext("2d");
   if (categoryChart) categoryChart.destroy();
+
+  const dataValues = Object.values(categoryTotals);
+  if (dataValues.length === 0) {
+    // If no expense data, show dummy slice
+    categoryChart = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: ["No expenses"],
+        datasets: [{ data: [1], backgroundColor: ["#ccc"] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+    return;
+  }
 
   categoryChart = new Chart(ctx, {
     type: "pie",
     data: {
       labels: Object.keys(categoryTotals),
       datasets: [{
-        data: Object.values(categoryTotals),
-        backgroundColor: [
-          "#e74c3c", "#f1c40f", "#3498db", "#9b59b6", "#2ecc71", "#e67e22"
-        ]
+        data: dataValues,
+        backgroundColor: ["#e74c3c","#f1c40f","#3498db","#9b59b6","#2ecc71","#e67e22"]
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
+    options: { responsive: true, maintainAspectRatio: false }
   });
 }
 
-// Reports charts
 function updateReports(data) {
-  // Monthly Income vs Expense
   const monthlyData = {};
   data.forEach(t => {
     const month = new Date(t.date).toLocaleString("default", { month: "short", year: "numeric" });
     if (!monthlyData[month]) monthlyData[month] = { income: 0, expense: 0 };
-    monthlyData[month][t.type] += t.amount;
+    monthlyData[month][t.type] += parseFloat(t.amount);
   });
 
   const ctx1 = document.getElementById("monthlyChart").getContext("2d");
@@ -137,10 +154,9 @@ function updateReports(data) {
     options: { responsive: true, maintainAspectRatio: false }
   });
 
-  // Category Breakdown (all transactions)
   const categoryTotals = {};
   data.forEach(t => {
-    categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+    categoryTotals[t.category] = (categoryTotals[t.category] || 0) + parseFloat(t.amount);
   });
 
   const ctx2 = document.getElementById("reportCategoryChart").getContext("2d");
@@ -158,7 +174,7 @@ function updateReports(data) {
   });
 }
 
-// Navigation switching
+// Navigation
 document.querySelectorAll(".sidebar nav a").forEach(link => {
   link.addEventListener("click", e => {
     e.preventDefault();
@@ -166,12 +182,9 @@ document.querySelectorAll(".sidebar nav a").forEach(link => {
     link.classList.add("active");
 
     document.querySelectorAll("main .section").forEach(sec => sec.style.display = "none");
-    const sectionId = link.dataset.section;
-    document.getElementById(sectionId).style.display = "block";
+    document.getElementById(link.dataset.section).style.display = "block";
 
-    if (sectionId === "reports") {
-      loadTransactions(); // refresh reports
-    }
+    if (link.dataset.section === "reports") loadTransactions();
   });
 });
 
